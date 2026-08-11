@@ -1,5 +1,11 @@
 import { supabaseClient } from './supabaseClient.js';
 
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function renderLogin() {
   const root = document.getElementById('admin-login');
   root.innerHTML = `
@@ -63,7 +69,7 @@ async function renderBookings() {
   listEl.innerHTML = bookings
     .map((b) => `
       <div class="booking-item" data-id="${b.id}">
-        <strong>${b.fecha} ${b.hora}</strong> — ${b.nombre_clienta} (${b.telefono})<br>
+        <strong>${b.fecha} ${b.hora}</strong> — ${escapeHtml(b.nombre_clienta)} (${escapeHtml(b.telefono)})<br>
         ${b.services?.nombre ?? ''} — estado: <span class="estado">${b.estado}</span>
         ${b.estado === 'pendiente_abono' ? '<button type="button" class="btn-primary confirm-btn">Confirmar pago</button>' : ''}
       </div>
