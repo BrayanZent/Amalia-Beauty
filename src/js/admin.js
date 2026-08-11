@@ -85,6 +85,58 @@ async function renderBookings() {
       btn.remove();
     });
   });
+
+  renderBloqueos();
+}
+
+async function renderBloqueos() {
+  const root = document.getElementById('bloqueos-root');
+  root.innerHTML = `
+    <h2>Bloquear día u horario</h2>
+    <form id="bloqueo-form">
+      <label for="bloqueo-fecha">Fecha</label>
+      <input id="bloqueo-fecha" type="date" required>
+      <label for="bloqueo-hora">Hora (vacío = todo el día)</label>
+      <input id="bloqueo-hora" type="text" placeholder="ej. 15:00">
+      <button type="submit" class="btn-primary">Bloquear</button>
+    </form>
+    <div id="bloqueos-list"></div>
+  `;
+
+  document.getElementById('bloqueo-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fecha = document.getElementById('bloqueo-fecha').value;
+    const hora = document.getElementById('bloqueo-hora').value.trim() || null;
+    await supabaseClient.from('bloqueos').insert({ fecha, hora });
+    e.target.reset();
+    await listBloqueos();
+  });
+
+  await listBloqueos();
+}
+
+async function listBloqueos() {
+  const { data: bloqueos } = await supabaseClient
+    .from('bloqueos')
+    .select('id,fecha,hora')
+    .order('fecha', { ascending: true });
+
+  document.getElementById('bloqueos-list').innerHTML = (bloqueos || [])
+    .map((b) => `
+      <div class="booking-item" data-id="${b.id}">
+        ${escapeHtml(b.fecha)} ${b.hora ? escapeHtml(b.hora) : '(todo el día)'}
+        <button type="button" class="unblock-btn">Quitar bloqueo</button>
+      </div>
+    `)
+    .join('');
+
+  document.querySelectorAll('.unblock-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.booking-item');
+      await supabaseClient.from('bloqueos').delete().eq('id', item.dataset.id);
+      item.remove();
+    });
+  });
 }
 
 document.addEventListener('admin-authenticated', renderBookings);
