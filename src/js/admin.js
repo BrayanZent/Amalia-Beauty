@@ -54,6 +54,8 @@ async function renderBookings() {
   const dashboard = document.getElementById('admin-dashboard');
   dashboard.innerHTML = '<h2>Reservas</h2><div id="bookings-list">Cargando…</div><div id="bloqueos-root"></div>';
 
+  renderBloqueos();
+
   const { data: bookings } = await supabaseClient
     .from('bookings')
     .select('id,nombre_clienta,telefono,fecha,hora,estado,service_id,services(nombre)')
@@ -85,8 +87,6 @@ async function renderBookings() {
       btn.remove();
     });
   });
-
-  renderBloqueos();
 }
 
 async function renderBloqueos() {
