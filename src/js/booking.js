@@ -1,6 +1,7 @@
 import { supabaseClient } from './supabaseClient.js';
 import { getFixedSlotsForDate, computeAvailableSlots, computeExpiryTimestamp } from './availability.js';
 import { BUSINESS } from './businessInfo.js';
+import { buildWhatsAppUrl } from './whatsapp.js';
 
 const state = { service: null, services: [], fecha: null, hora: null };
 window.__bookingState = state;
@@ -161,5 +162,34 @@ async function handleSubmit(e) {
     detail: { booking: data, servicioNombre: state.service.nombre },
   }));
 }
+
+document.addEventListener('booking-created', (e) => {
+  const { booking, servicioNombre } = e.detail;
+  const { datosTransferencia, abonoMonto, whatsappPhone } = BUSINESS;
+  const container = document.getElementById('booking-flow');
+
+  const whatsappUrl = buildWhatsAppUrl(whatsappPhone, {
+    servicioNombre,
+    fecha: booking.fecha,
+    hora: booking.hora,
+    nombre: booking.nombre_clienta,
+  });
+
+  container.innerHTML = `
+    <div class="service-card">
+      <h3>¡Ya casi! Reserva tu cupo con un abono de $${abonoMonto.toLocaleString('es-CL')}</h3>
+      <p>Tienes 30 minutos para transferir y enviar el comprobante, o el cupo se libera.</p>
+      <p>
+        <strong>${datosTransferencia.titular}</strong><br>
+        RUT: ${datosTransferencia.rut}<br>
+        ${datosTransferencia.tipoCuenta} — ${datosTransferencia.banco}<br>
+        ${datosTransferencia.email}
+      </p>
+      <a class="btn-primary btn-whatsapp" href="${whatsappUrl}" target="_blank" rel="noopener">
+        Enviar comprobante por WhatsApp
+      </a>
+    </div>
+  `;
+});
 
 renderStep1();
