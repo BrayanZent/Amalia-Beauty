@@ -1,0 +1,122 @@
+:root {
+  --color-primary: #c98a90;
+  --color-primary-dark: #a8646b;
+  --color-gold: #b8933f;
+  --color-bg: #fff9f7;
+  --color-bg-alt: #f5e9e6;
+  --color-text: #2b2b2b;
+  --radius: 14px;
+  --max-width: 480px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding-bottom: 72px; /* espacio para CTA sticky */
+}
+
+header.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+header.site-header img { height: 40px; }
+
+nav.site-nav {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 10px 16px;
+  background: var(--color-bg-alt);
+  font-size: 14px;
+}
+
+nav.site-nav a {
+  color: var(--color-primary-dark);
+  text-decoration: none;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+section {
+  padding: 28px 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+h1, h2 { color: var(--color-primary-dark); }
+
+.btn-primary {
+  display: inline-block;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+}
+
+.btn-whatsapp {
+  background: #25D366;
+}
+
+.cta-sticky {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  padding: 10px 16px;
+  background: white;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+}
+
+.cta-sticky .btn-primary { width: 100%; }
+
+.service-card, .slot-btn, .booking-item {
+  border: 1px solid var(--color-bg-alt);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  background: white;
+}
+
+.slot-btn {
+  display: inline-block;
+  margin: 4px;
+  padding: 10px 16px;
+  cursor: pointer;
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.slot-btn.selected {
+  background: var(--color-primary);
+  color: white;
+}
+
+.slot-btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (min-width: 700px) {
+  section { padding: 48px 24px; }
+}
