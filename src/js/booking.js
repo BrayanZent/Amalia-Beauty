@@ -1,5 +1,6 @@
 import { supabaseClient } from './supabaseClient.js';
 import { getFixedSlotsForDate, computeAvailableSlots } from './availability.js';
+import { BUSINESS } from './businessInfo.js';
 
 const state = { service: null, services: [], fecha: null, hora: null };
 window.__bookingState = state;
@@ -17,16 +18,18 @@ function nextSixDays() {
 }
 
 async function fetchServices() {
-  const { data } = await supabaseClient.from('services').select('*').order('precio_desde');
+  const { data, error } = await supabaseClient.from('services').select('*').order('precio_desde');
+  if (error) return [];
   return data || [];
 }
 
 async function fetchAvailability(fecha) {
   const allSlots = getFixedSlotsForDate(fecha);
-  const [{ data: bookings }, { data: blocks }] = await Promise.all([
+  const [{ data: bookings, error: bookingsError }, { data: blocks, error: blocksError }] = await Promise.all([
     supabaseClient.from('bookings').select('fecha,hora,estado').eq('fecha', fecha),
     supabaseClient.from('bloqueos').select('fecha,hora').eq('fecha', fecha),
   ]);
+  if (bookingsError || blocksError) return [];
   return computeAvailableSlots(fecha, allSlots, bookings || [], blocks || []);
 }
 
@@ -79,7 +82,7 @@ async function renderSlots() {
   const disponibles = await fetchAvailability(state.fecha);
 
   if (disponibles.length === 0) {
-    const whatsappUrl = `https://wa.me/56991569439?text=${encodeURIComponent(`Hola! Quiero consultar disponibilidad para el ${state.fecha}.`)}`;
+    const whatsappUrl = `https://wa.me/${BUSINESS.whatsappPhone}?text=${encodeURIComponent(`Hola! Quiero consultar disponibilidad para el ${state.fecha}.`)}`;
     slotsContainer.innerHTML = `
       <p>Sin cupos disponibles ese día.</p>
       <a class="btn-primary btn-whatsapp" href="${whatsappUrl}" target="_blank" rel="noopener">Consultar por WhatsApp</a>
