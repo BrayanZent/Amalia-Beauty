@@ -1,5 +1,5 @@
 import { supabaseClient } from './supabaseClient.js';
-import { getFixedSlotsForDate, computeAvailableSlots } from './availability.js';
+import { getFixedSlotsForDate, computeAvailableSlots, computeExpiryTimestamp } from './availability.js';
 import { BUSINESS } from './businessInfo.js';
 
 const state = { service: null, services: [], fecha: null, hora: null };
@@ -101,6 +101,65 @@ async function renderSlots() {
       document.dispatchEvent(new CustomEvent('slot-selected'));
     });
   });
+}
+
+document.addEventListener('slot-selected', () => {
+  const container = document.getElementById('client-form-container');
+  container.innerHTML = `
+    <form id="client-form">
+      <label for="nombre-clienta">Nombre</label>
+      <input id="nombre-clienta" name="nombre" required minlength="2">
+
+      <label for="telefono-clienta">Teléfono</label>
+      <input id="telefono-clienta" name="telefono" required minlength="8" placeholder="9 1234 5678">
+
+      <label>
+        <input type="checkbox" id="consentimiento" required>
+        Acepto que Amalia Beauty use estos datos para gestionar mi reserva
+        (<a href="privacidad.html" target="_blank">política de privacidad</a>).
+      </label>
+
+      <button type="submit" class="btn-primary">Confirmar reserva</button>
+    </form>
+    <div id="form-error" style="color:#b00; display:none;"></div>
+  `;
+
+  document.getElementById('client-form').addEventListener('submit', handleSubmit);
+});
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  const nombre = form.nombre.value.trim();
+  const telefono = form.telefono.value.trim();
+  const errorEl = document.getElementById('form-error');
+  errorEl.style.display = 'none';
+
+  const nuevaReserva = {
+    nombre_clienta: nombre,
+    telefono,
+    service_id: state.service.id,
+    fecha: state.fecha,
+    hora: state.hora,
+    estado: 'pendiente_abono',
+    expira_en: computeExpiryTimestamp(),
+  };
+
+  const { data, error } = await supabaseClient
+    .from('bookings')
+    .insert(nuevaReserva)
+    .select()
+    .single();
+
+  if (error) {
+    errorEl.textContent = 'Ese cupo ya no está disponible. Elige otro horario.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  document.dispatchEvent(new CustomEvent('booking-created', {
+    detail: { booking: data, servicioNombre: state.service.nombre },
+  }));
 }
 
 renderStep1();
