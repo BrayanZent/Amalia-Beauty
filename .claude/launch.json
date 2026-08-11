@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "amalia-beauty-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8420", "--directory", "src"],
+      "port": 8420
+    }
+  ]
+}
