@@ -97,6 +97,10 @@ El último punto (sobre-cupo) reutiliza el mismo botón de WhatsApp que ya exist
 - No se cambia el flujo de abono/WhatsApp/expiración de 30 minutos — sigue igual.
 - Gift Cards (encontradas en `Amalia nuevos/amalia fotos/`, fotos de tarjetas físicas de regalo) quedan fuera — es una funcionalidad nueva, se evaluará como proyecto aparte.
 
-## 9. Supuestos
+## 9. Restricción de renderizado mobile
+
+El calendario mensual tiene más elementos por pantalla que la fila de 6 botones que reemplaza (grilla de 7 columnas x hasta 5 filas, más el bloque de políticas). Es la parte con más riesgo de verse apretada en celular. Antes de dar por buena la tarea del calendario, se debe probar explícitamente en viewport mobile (375px de ancho, el estándar del proyecto) que: los números de día no se cortan, los puntos de disponibilidad se distinguen a simple vista, y las horas (disponibles/reservadas) del día expandido se leen sin hacer zoom.
+
+## 10. Supuestos
 
 - Las reservas de prueba ya hechas en producción (si quedó alguna `pendiente_abono`/`confirmada` de las pruebas del usuario) van a mostrar `incluye_kapping/spa/retiro = false` por el valor default — no se migran datos históricos de servicios eliminados; si alguna reserva de prueba apuntaba a un `service_id` que se elimina (Kapping/Spa/Retiro como filas propias), esa reserva de prueba debe borrarse antes de aplicar la migración (se verificará como paso previo del plan).
