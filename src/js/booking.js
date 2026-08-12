@@ -153,11 +153,9 @@ async function handleSubmit(e) {
     expira_en: computeExpiryTimestamp(),
   };
 
-  const { data, error } = await supabaseClient
+  const { error } = await supabaseClient
     .from('bookings')
-    .insert(nuevaReserva)
-    .select()
-    .single();
+    .insert(nuevaReserva);
 
   if (error) {
     errorEl.textContent = 'Ese cupo ya no está disponible. Elige otro horario.';
@@ -166,7 +164,7 @@ async function handleSubmit(e) {
   }
 
   document.dispatchEvent(new CustomEvent('booking-created', {
-    detail: { booking: data, servicioNombre: state.service.nombre },
+    detail: { booking: nuevaReserva, servicioNombre: state.service.nombre },
   }));
 }
 
