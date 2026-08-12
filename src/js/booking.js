@@ -6,6 +6,13 @@ import { buildWhatsAppUrl } from './whatsapp.js';
 const state = { service: null, services: [], fecha: null, hora: null };
 window.__bookingState = state;
 
+function toLocalDateString(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function nextSixDays() {
   const days = [];
   const hoy = new Date();
@@ -13,7 +20,7 @@ function nextSixDays() {
     const d = new Date(hoy);
     d.setDate(hoy.getDate() + i);
     if (d.getDay() === 0) continue; // domingo cerrado
-    days.push(d.toISOString().slice(0, 10));
+    days.push(toLocalDateString(d));
   }
   return days;
 }
@@ -27,7 +34,7 @@ async function fetchServices() {
 async function fetchAvailability(fecha) {
   const allSlots = getFixedSlotsForDate(fecha);
   const [{ data: bookings, error: bookingsError }, { data: blocks, error: blocksError }] = await Promise.all([
-    supabaseClient.from('bookings').select('fecha,hora,estado').eq('fecha', fecha),
+    supabaseClient.from('public_slots').select('fecha,hora,estado').eq('fecha', fecha),
     supabaseClient.from('bloqueos').select('fecha,hora').eq('fecha', fecha),
   ]);
   if (bookingsError || blocksError) return [];

@@ -34,7 +34,14 @@ alter table bloqueos enable row level security;
 
 create policy "servicios lectura publica" on services for select using (true);
 create policy "bloqueos lectura publica" on bloqueos for select using (true);
-create policy "reservas lectura publica" on bookings for select using (true);
+-- Solo el panel admin (autenticado) puede leer nombre_clienta/telefono; el público solo ve ocupación vía public_slots
+create policy "reservas lectura solo admin" on bookings for select using (auth.role() = 'authenticated');
+
+create view public_slots as
+  select fecha, hora, estado from bookings;
+
+grant select on public_slots to anon, authenticated;
+
 create policy "cualquiera crea reserva" on bookings for insert with check (true);
 create policy "admin actualiza reservas" on bookings for update using (auth.role() = 'authenticated');
 create policy "admin crea bloqueos" on bloqueos for insert with check (auth.role() = 'authenticated');
