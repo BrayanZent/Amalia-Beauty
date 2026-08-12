@@ -1,9 +1,20 @@
 import { supabaseClient } from './supabaseClient.js';
-import { getFixedSlotsForDate, computeAvailableSlots, computeExpiryTimestamp } from './availability.js';
-import { BUSINESS } from './businessInfo.js';
+import { getCalendarGrid, computeDaySlots } from './monthCalendar.js';
+import { computeExpiryTimestamp } from './availability.js';
+import { BUSINESS, ADDONS } from './businessInfo.js';
 import { buildWhatsAppUrl } from './whatsapp.js';
 
-const state = { service: null, services: [], fecha: null, hora: null };
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+const state = {
+  services: [],
+  service: null,
+  addons: { kapping: false, spa: false, retiro: false },
+  fecha: null,
+  hora: null,
+  viewYear: new Date().getFullYear(),
+  viewMonth: new Date().getMonth(),
+};
 window.__bookingState = state;
 
 function toLocalDateString(d) {
@@ -13,16 +24,21 @@ function toLocalDateString(d) {
   return `${y}-${m}-${day}`;
 }
 
-function nextSixDays() {
-  const days = [];
-  const hoy = new Date();
-  for (let i = 0; i < 14 && days.length < 6; i++) {
-    const d = new Date(hoy);
-    d.setDate(hoy.getDate() + i);
-    if (d.getDay() === 0) continue; // domingo cerrado
-    days.push(toLocalDateString(d));
-  }
-  return days;
+function monthRange(year, month) {
+  const first = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const last = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  return { first, last };
+}
+
+async function fetchMonthData(year, month) {
+  const { first, last } = monthRange(year, month);
+  const [{ data: bookings, error: bookingsError }, { data: blocks, error: blocksError }] = await Promise.all([
+    supabaseClient.from('public_slots').select('fecha,hora,estado').gte('fecha', first).lte('fecha', last),
+    supabaseClient.from('bloqueos').select('fecha,hora').gte('fecha', first).lte('fecha', last),
+  ]);
+  if (bookingsError || blocksError) return { bookings: [], blocks: [] };
+  return { bookings: bookings || [], blocks: blocks || [] };
 }
 
 async function fetchServices() {
@@ -31,89 +47,143 @@ async function fetchServices() {
   return data || [];
 }
 
-async function fetchAvailability(fecha) {
-  const allSlots = getFixedSlotsForDate(fecha);
-  const [{ data: bookings, error: bookingsError }, { data: blocks, error: blocksError }] = await Promise.all([
-    supabaseClient.from('public_slots').select('fecha,hora,estado').eq('fecha', fecha),
-    supabaseClient.from('bloqueos').select('fecha,hora').eq('fecha', fecha),
-  ]);
-  if (bookingsError || blocksError) return [];
-  return computeAvailableSlots(fecha, allSlots, bookings || [], blocks || []);
+async function renderCalendar() {
+  const root = document.getElementById('booking-flow');
+  root.innerHTML = `
+    <div id="calendar-root"></div>
+    <div id="day-detail"></div>
+    <div id="booking-form-container"></div>
+  `;
+  await renderMonth();
 }
 
-async function renderStep1() {
-  const root = document.getElementById('booking-flow');
-  state.services = await fetchServices();
+async function renderMonth() {
+  const calRoot = document.getElementById('calendar-root');
+  calRoot.innerHTML = '<p>Cargando calendario…</p>';
 
-  root.innerHTML = `
-    <label for="service-select">Elige un servicio</label>
-    <select id="service-select">
-      <option value="">Selecciona…</option>
-      ${state.services.map((s) => `<option value="${s.id}">${s.nombre} — desde $${s.precio_desde.toLocaleString('es-CL')}</option>`).join('')}
-    </select>
+  const year = state.viewYear;
+  const month = state.viewMonth;
+  const { bookings, blocks } = await fetchMonthData(year, month);
+  const weeks = getCalendarGrid(year, month);
+  const hoy = toLocalDateString(new Date());
 
-    <div id="date-picker" hidden>
-      <label>Elige un día</label>
-      <div id="date-buttons"></div>
+  const dayCell = (dateStr) => {
+    if (!dateStr) return '<div></div>';
+    const dow = new Date(`${dateStr}T00:00:00`).getDay();
+    const isPast = dateStr < hoy;
+    const dayNum = Number(dateStr.slice(-2));
+
+    if (dow === 0 || isPast) {
+      return `<div class="cal-day cal-day-closed">${dayNum}</div>`;
+    }
+
+    const { freeSlots } = computeDaySlots(dateStr, bookings, blocks);
+    const status = freeSlots.length > 0 ? 'free' : 'full';
+    const selected = dateStr === state.fecha ? ' cal-day-selected' : '';
+    return `<button type="button" class="cal-day cal-day-${status}${selected}" data-fecha="${dateStr}">${dayNum}<span class="cal-dot"></span></button>`;
+  };
+
+  calRoot.innerHTML = `
+    <div class="cal-header">
+      <span class="cal-month-label">${MESES[month]} ${year}</span>
+      <button type="button" id="cal-next" class="cal-nav-btn" aria-label="Mes siguiente">›</button>
     </div>
-
-    <div id="slots-container"></div>
-    <div id="client-form-container"></div>
+    <div class="cal-weekdays"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+    <div class="cal-grid">
+      ${weeks.map((week) => week.map(dayCell).join('')).join('')}
+    </div>
+    <div class="cal-legend">
+      <span class="cal-legend-free">Con cupos</span>
+      <span class="cal-legend-full">Completo</span>
+    </div>
   `;
 
-  document.getElementById('service-select').addEventListener('change', (e) => {
-    state.service = state.services.find((s) => s.id === e.target.value) || null;
-    document.getElementById('date-picker').hidden = !state.service;
-    if (state.service) renderDateButtons();
+  document.getElementById('cal-next').addEventListener('click', () => {
+    state.viewMonth += 1;
+    if (state.viewMonth > 11) {
+      state.viewMonth = 0;
+      state.viewYear += 1;
+    }
+    state.fecha = null;
+    state.hora = null;
+    document.getElementById('day-detail').innerHTML = '';
+    document.getElementById('booking-form-container').innerHTML = '';
+    renderMonth();
   });
-}
 
-function renderDateButtons() {
-  const container = document.getElementById('date-buttons');
-  container.innerHTML = nextSixDays()
-    .map((fecha) => `<button type="button" class="slot-btn" data-fecha="${fecha}">${fecha}</button>`)
-    .join('');
-  container.querySelectorAll('.slot-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      container.querySelectorAll('.slot-btn').forEach((b) => b.classList.remove('selected'));
-      btn.classList.add('selected');
+  calRoot.querySelectorAll('.cal-day-free, .cal-day-full').forEach((btn) => {
+    btn.addEventListener('click', () => {
       state.fecha = btn.dataset.fecha;
       state.hora = null;
-      await renderSlots();
+      document.getElementById('booking-form-container').innerHTML = '';
+      renderMonth();
+      renderDayDetail(bookings, blocks);
     });
   });
 }
 
-async function renderSlots() {
-  const slotsContainer = document.getElementById('slots-container');
-  slotsContainer.innerHTML = 'Buscando cupos…';
-  const disponibles = await fetchAvailability(state.fecha);
+function renderDayDetail(bookings, blocks) {
+  const root = document.getElementById('day-detail');
+  if (!state.fecha) {
+    root.innerHTML = '';
+    return;
+  }
 
-  if (disponibles.length === 0) {
+  const { allSlots, freeSlots } = computeDaySlots(state.fecha, bookings, blocks);
+  const freeSet = new Set(freeSlots);
+
+  if (allSlots.length === 0) {
     const whatsappUrl = `https://wa.me/${BUSINESS.whatsappPhone}?text=${encodeURIComponent(`Hola! Quiero consultar disponibilidad para el ${state.fecha}.`)}`;
-    slotsContainer.innerHTML = `
+    root.innerHTML = `
       <p>Sin cupos disponibles ese día.</p>
       <a class="btn-primary btn-whatsapp" href="${whatsappUrl}" target="_blank" rel="noopener">Consultar por WhatsApp</a>
     `;
     return;
   }
 
-  slotsContainer.innerHTML = disponibles
-    .map((hora) => `<button type="button" class="slot-btn" data-hora="${hora}">${hora}</button>`)
-    .join('');
-  slotsContainer.querySelectorAll('.slot-btn').forEach((btn) => {
+  root.innerHTML = `
+    <p class="label">Horas del ${state.fecha}</p>
+    ${allSlots
+      .map((h) => {
+        const isFree = freeSet.has(h);
+        const selected = h === state.hora ? ' selected' : '';
+        return isFree
+          ? `<button type="button" class="slot-btn${selected}" data-hora="${h}">${h}</button>`
+          : `<span class="slot-btn slot-btn-taken">${h} · Reservado</span>`;
+      })
+      .join('')}
+  `;
+
+  root.querySelectorAll('.slot-btn:not(.slot-btn-taken)').forEach((btn) => {
     btn.addEventListener('click', () => {
-      slotsContainer.querySelectorAll('.slot-btn').forEach((b) => b.classList.remove('selected'));
-      btn.classList.add('selected');
       state.hora = btn.dataset.hora;
-      document.dispatchEvent(new CustomEvent('slot-selected'));
+      root.querySelectorAll('.slot-btn').forEach((b) => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      renderBookingForm();
     });
   });
 }
 
-document.addEventListener('slot-selected', () => {
-  const container = document.getElementById('client-form-container');
-  container.innerHTML = `
+async function renderBookingForm() {
+  const root = document.getElementById('booking-form-container');
+  if (state.services.length === 0) state.services = await fetchServices();
+
+  root.innerHTML = `
+    <p class="label">Elige tu servicio</p>
+    <div id="service-options">
+      ${state.services
+        .map(
+          (s) => `
+        <label class="service-option">
+          <input type="radio" name="service" value="${s.id}">
+          ${s.nombre} — desde $${s.precio_desde.toLocaleString('es-CL')}
+        </label>
+      `
+        )
+        .join('')}
+    </div>
+    <div id="addon-options"></div>
+    <p id="total-price"></p>
     <form id="client-form">
       <label for="nombre-clienta">Nombre</label>
       <input id="nombre-clienta" name="nombre" required minlength="2">
@@ -127,13 +197,71 @@ document.addEventListener('slot-selected', () => {
         (<a href="privacidad.html" target="_blank">política de privacidad</a>).
       </label>
 
-      <button type="submit" class="btn-primary">Confirmar reserva</button>
+      <button type="submit" class="btn-primary" id="submit-btn" disabled>Confirmar reserva</button>
     </form>
     <div id="form-error" style="color:#b00; display:none;"></div>
   `;
 
+  root.querySelectorAll('input[name="service"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      state.service = state.services.find((s) => s.id === radio.value) || null;
+      state.addons = { kapping: false, spa: false, retiro: false };
+      renderAddonOptions();
+      updateTotalPrice();
+      document.getElementById('submit-btn').disabled = !state.service;
+    });
+  });
+
   document.getElementById('client-form').addEventListener('submit', handleSubmit);
-});
+}
+
+function renderAddonOptions() {
+  const root = document.getElementById('addon-options');
+  if (!state.service) {
+    root.innerHTML = '';
+    return;
+  }
+
+  const disponibles = ADDONS.filter((a) => a.aplicaA.includes(state.service.nombre));
+  if (disponibles.length === 0) {
+    root.innerHTML = '';
+    return;
+  }
+
+  root.innerHTML = `
+    <p class="label">Adicionales</p>
+    ${disponibles
+      .map(
+        (a) => `
+      <label class="service-option">
+        <input type="checkbox" data-addon="${a.id}">
+        ${a.nombre} (+$${a.precio.toLocaleString('es-CL')})
+      </label>
+    `
+      )
+      .join('')}
+  `;
+
+  root.querySelectorAll('input[data-addon]').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      state.addons[checkbox.dataset.addon] = checkbox.checked;
+      updateTotalPrice();
+    });
+  });
+}
+
+function updateTotalPrice() {
+  const el = document.getElementById('total-price');
+  if (!state.service) {
+    el.textContent = '';
+    return;
+  }
+  let total = state.service.precio_desde;
+  ADDONS.forEach((a) => {
+    if (state.addons[a.id]) total += a.precio;
+  });
+  el.textContent = `Total: $${total.toLocaleString('es-CL')}`;
+}
 
 async function handleSubmit(e) {
   e.preventDefault();
@@ -151,11 +279,12 @@ async function handleSubmit(e) {
     hora: state.hora,
     estado: 'pendiente_abono',
     expira_en: computeExpiryTimestamp(),
+    incluye_kapping: state.addons.kapping,
+    incluye_spa: state.addons.spa,
+    incluye_retiro: state.addons.retiro,
   };
 
-  const { error } = await supabaseClient
-    .from('bookings')
-    .insert(nuevaReserva);
+  const { error } = await supabaseClient.from('bookings').insert(nuevaReserva);
 
   if (error) {
     errorEl.textContent = 'Ese cupo ya no está disponible. Elige otro horario.';
@@ -197,4 +326,4 @@ document.addEventListener('booking-created', (e) => {
   `;
 });
 
-renderStep1();
+renderCalendar();

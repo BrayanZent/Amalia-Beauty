@@ -1,10 +1,6 @@
 import { supabaseClient } from './supabaseClient.js';
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+import { escapeHtml } from './domUtils.js';
+import { renderAdminCalendar } from './adminCalendar.js';
 
 function renderLogin() {
   const root = document.getElementById('admin-login');
@@ -52,41 +48,10 @@ checkExistingSession();
 
 async function renderBookings() {
   const dashboard = document.getElementById('admin-dashboard');
-  dashboard.innerHTML = '<h2>Reservas</h2><div id="bookings-list">Cargando…</div><div id="bloqueos-root"></div>';
+  dashboard.innerHTML = '<h2>Agenda</h2><div id="admin-calendar-container"></div><div id="bloqueos-root"></div>';
 
-  renderBloqueos();
-
-  const { data: bookings } = await supabaseClient
-    .from('bookings')
-    .select('id,nombre_clienta,telefono,fecha,hora,estado,service_id,services(nombre)')
-    .order('fecha', { ascending: true })
-    .order('hora', { ascending: true });
-
-  const listEl = document.getElementById('bookings-list');
-  if (!bookings || bookings.length === 0) {
-    listEl.textContent = 'No hay reservas todavía.';
-    return;
-  }
-
-  listEl.innerHTML = bookings
-    .map((b) => `
-      <div class="booking-item" data-id="${b.id}">
-        <strong>${b.fecha} ${b.hora}</strong> — ${escapeHtml(b.nombre_clienta)} (${escapeHtml(b.telefono)})<br>
-        ${b.services?.nombre ?? ''} — estado: <span class="estado">${b.estado}</span>
-        ${b.estado === 'pendiente_abono' ? '<button type="button" class="btn-primary confirm-btn">Confirmar pago</button>' : ''}
-      </div>
-    `)
-    .join('');
-
-  listEl.querySelectorAll('.confirm-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const item = btn.closest('.booking-item');
-      const id = item.dataset.id;
-      await supabaseClient.from('bookings').update({ estado: 'confirmada' }).eq('id', id);
-      item.querySelector('.estado').textContent = 'confirmada';
-      btn.remove();
-    });
-  });
+  await renderAdminCalendar(document.getElementById('admin-calendar-container'));
+  await renderBloqueos();
 }
 
 async function renderBloqueos() {

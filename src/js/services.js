@@ -1,8 +1,5 @@
 import { supabaseClient } from './supabaseClient.js';
-
-function formatCLP(monto) {
-  return monto.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
-}
+import { SERVICE_DESCRIPTIONS, RETIRO_ADICIONAL } from './businessInfo.js';
 
 async function renderServices() {
   const container = document.getElementById('services-list');
@@ -16,15 +13,25 @@ async function renderServices() {
     return;
   }
 
-  container.innerHTML = data
+  const baseCards = data
     .map((s) => `
       <div class="service-card">
         <strong>${s.nombre}</strong>
-        <div>${s.es_adicional ? 'Adicional: ' : 'Desde '}${formatCLP(s.precio_desde)}</div>
+        <div>${SERVICE_DESCRIPTIONS[s.nombre] ?? ''}</div>
         <div>Duración estimada: ${s.duracion_min} min</div>
       </div>
     `)
     .join('');
+
+  const retiroCard = `
+    <div class="service-card">
+      <strong>${RETIRO_ADICIONAL.nombre} <em>(adicional)</em></strong>
+      <div>${RETIRO_ADICIONAL.resena}</div>
+      <div>Duración estimada: ${RETIRO_ADICIONAL.duracionTexto}</div>
+    </div>
+  `;
+
+  container.innerHTML = baseCards + retiroCard;
 }
 
 renderServices();
