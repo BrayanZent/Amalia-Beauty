@@ -1,6 +1,7 @@
 import { supabaseClient } from './supabaseClient.js';
 import { escapeHtml } from './domUtils.js';
 import { renderAdminCalendar } from './adminCalendar.js';
+import { getFixedSlotsForDate } from './availability.js';
 
 function renderLogin() {
   const root = document.getElementById('admin-login');
@@ -54,6 +55,12 @@ async function renderBookings() {
   await renderBloqueos();
 }
 
+function actualizarHorasBloqueo(fecha) {
+  const select = document.getElementById('bloqueo-hora');
+  const horas = fecha ? getFixedSlotsForDate(fecha) : [];
+  select.innerHTML = '<option value="">Todo el día</option>' + horas.map((h) => `<option value="${h}">${h}</option>`).join('');
+}
+
 async function renderBloqueos() {
   const root = document.getElementById('bloqueos-root');
   root.innerHTML = `
@@ -64,16 +71,15 @@ async function renderBloqueos() {
       <label for="bloqueo-hora">Hora (vacío = todo el día)</label>
       <select id="bloqueo-hora">
         <option value="">Todo el día</option>
-        <option value="09:00">09:00</option>
-        <option value="10:00">10:00</option>
-        <option value="12:00">12:00</option>
-        <option value="15:00">15:00</option>
-        <option value="18:00">18:00</option>
       </select>
       <button type="submit" class="btn-primary">Bloquear</button>
     </form>
     <div id="bloqueos-list"></div>
   `;
+
+  document.getElementById('bloqueo-fecha').addEventListener('change', (e) => {
+    actualizarHorasBloqueo(e.target.value);
+  });
 
   document.getElementById('bloqueo-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -81,6 +87,7 @@ async function renderBloqueos() {
     const hora = document.getElementById('bloqueo-hora').value.trim() || null;
     await supabaseClient.from('bloqueos').insert({ fecha, hora });
     e.target.reset();
+    actualizarHorasBloqueo('');
     await listBloqueos();
   });
 

@@ -157,6 +157,12 @@ h1, h2 { color: var(--color-primary-dark); }
   cursor: pointer;
 }
 
+.cal-nav-btn[disabled] {
+  background: var(--color-bg-alt);
+  color: #c9beb8;
+  cursor: not-allowed;
+}
+
 .cal-weekdays, .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

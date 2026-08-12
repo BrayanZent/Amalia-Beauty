@@ -134,5 +134,8 @@ async function renderAdminDayDetail(fecha) {
   });
 
   const bloqueoFecha = document.getElementById('bloqueo-fecha');
-  if (bloqueoFecha) bloqueoFecha.value = fecha;
+  if (bloqueoFecha) {
+    bloqueoFecha.value = fecha;
+    bloqueoFecha.dispatchEvent(new Event('change'));
+  }
 }

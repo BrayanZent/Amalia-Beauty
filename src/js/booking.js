@@ -83,8 +83,12 @@ async function renderMonth() {
     return `<button type="button" class="cal-day cal-day-${status}${selected}" data-fecha="${dateStr}">${dayNum}<span class="cal-dot"></span></button>`;
   };
 
+  const ahora = new Date();
+  const esMesActual = year === ahora.getFullYear() && month === ahora.getMonth();
+
   calRoot.innerHTML = `
     <div class="cal-header">
+      <button type="button" id="cal-prev" class="cal-nav-btn" aria-label="Mes anterior" ${esMesActual ? 'disabled' : ''}>‹</button>
       <span class="cal-month-label">${MESES[month]} ${year}</span>
       <button type="button" id="cal-next" class="cal-nav-btn" aria-label="Mes siguiente">›</button>
     </div>
@@ -98,18 +102,26 @@ async function renderMonth() {
     </div>
   `;
 
-  document.getElementById('cal-next').addEventListener('click', () => {
-    state.viewMonth += 1;
+  function irAOtroMes(delta) {
+    state.viewMonth += delta;
     if (state.viewMonth > 11) {
       state.viewMonth = 0;
       state.viewYear += 1;
+    } else if (state.viewMonth < 0) {
+      state.viewMonth = 11;
+      state.viewYear -= 1;
     }
     state.fecha = null;
     state.hora = null;
     document.getElementById('day-detail').innerHTML = '';
     document.getElementById('booking-form-container').innerHTML = '';
     renderMonth();
-  });
+  }
+
+  document.getElementById('cal-next').addEventListener('click', () => irAOtroMes(1));
+  if (!esMesActual) {
+    document.getElementById('cal-prev').addEventListener('click', () => irAOtroMes(-1));
+  }
 
   calRoot.querySelectorAll('.cal-day-free, .cal-day-full').forEach((btn) => {
     btn.addEventListener('click', () => {
