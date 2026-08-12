@@ -56,6 +56,8 @@ create policy "expirar reservas vencidas" on bookings
   for update
   using (estado = 'pendiente_abono' and expira_en < now())
   with check (estado = 'expirada');
+-- Restringe a nivel de columna: anon solo puede escribir 'estado' (y solo vía la policy de arriba), nunca otros campos
+grant update (estado) on bookings to anon;
 create policy "admin crea bloqueos" on bloqueos for insert with check (auth.role() = 'authenticated');
 create policy "admin borra bloqueos" on bloqueos for delete using (auth.role() = 'authenticated');
 
