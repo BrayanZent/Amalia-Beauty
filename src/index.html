@@ -5,9 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Amalia Beauty — Reserva tu hora</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
+  <div class="marquee-bg" id="marquee-bg" aria-hidden="true">
+    <div class="marquee-track" id="marquee-track"></div>
+  </div>
   <header class="site-header">
     <img src="assets/logo.png" alt="Amalia Beauty">
   </header>
@@ -21,7 +28,7 @@
 
   <section id="inicio">
     <h1>Tus uñas, tu momento</h1>
-    <p>Esmaltado permanente, spa de manos y harto cariño, en el sector Vista Valle.</p>
+    <p class="hero-tagline">Esmaltado permanente · Extensión de Polygel · Cuidado de manos · Atención personalizada</p>
   </section>
 
   <section id="reservar">
@@ -75,6 +82,7 @@
     <a href="#reservar" class="btn-primary">Reservar hora</a>
   </div>
 
+  <script type="module" src="js/velocityMarquee.js"></script>
   <script type="module" src="js/services.js"></script>
   <script type="module" src="js/expireBookings.js"></script>
   <script type="module" src="js/booking.js"></script>

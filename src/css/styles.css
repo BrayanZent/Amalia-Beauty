@@ -14,7 +14,6 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', system-ui, sans-serif;
-  background: var(--color-bg);
   color: var(--color-text);
   padding-bottom: 72px; /* espacio para CTA sticky */
 }
@@ -22,16 +21,18 @@ body {
 header.site-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 12px 16px;
-  background: white;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   position: sticky;
   top: 0;
   z-index: 20;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
-header.site-header img { height: 72px; }
+header.site-header img { height: 96px; }
 
 nav.site-nav {
   display: flex;
@@ -237,4 +238,33 @@ h1, h2 { color: var(--color-primary-dark); }
   display: block;
   padding: 10px 0;
   font-size: 15px;
+}
+
+.marquee-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--color-bg);
+  pointer-events: none;
+}
+
+.marquee-track {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  width: max-content;
+  opacity: 0.4;
+}
+
+.marquee-bottle {
+  flex-shrink: 0;
+  margin: 0 12px;
+}
+
+h1, h2, .hero-tagline, .btn-primary {
+  font-family: 'Merriweather', serif;
 }
