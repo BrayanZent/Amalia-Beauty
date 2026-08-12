@@ -29,15 +29,16 @@ El precio total (base + adicionales marcados) se muestra antes de confirmar, den
 
 ### Catálogo informativo (sección "Servicios")
 
-Esta sección es solo informativa (no es donde se elige el servicio para reservar — eso pasa dentro del bloque de reserva). Deja de mostrar precio y pasa a mostrar reseña breve + duración estimada:
+Esta sección es solo informativa (no es donde se elige el servicio para reservar — eso pasa dentro del bloque de reserva). Deja de mostrar precio y pasa a mostrar reseña breve + duración estimada. Muestra los 3 servicios base más una 4ª tarjeta para **Retiro de trabajo** (que sigue siendo un adicional, no un servicio base seleccionable por sí solo — se agrega acá solo para informar, con la misma nota de seguridad de kapping y spa):
 
 | Servicio | Reseña | Duración |
 |---|---|---|
 | Extensión de Polygel | Extensión con Polygel para largo y forma a medida, terminación pulida y resistente al uso diario. | ~2 h |
 | Esmaltado permanente | Esmaltado de larga duración, sin descascararse ni perder brillo. Suma Kapping como adicional para reforzar la uña. | 45-60 min |
 | Spa y arreglo de uñas | Ritual de higienizante, exfoliante de perlas de jojoba, mascarilla de karité, loción con aloe vera y vitamina E, y aceite de cutículas. Productos cruelty free y veganos. | ~45 min |
+| Retiro de trabajo *(adicional)* | Retiramos tu esmaltado permanente o extensión de Polygel anterior de forma segura, cuidando la uña natural. No lo hagas tú misma en casa: un retiro incorrecto puede dañar y debilitar la uña. | 30-40 min |
 
-Redactado con el agente `amalia-manicurista`, basado en contenido real (foto de detalle del spa que Amalia ya tenía en `Amalia nuevos/amalia fotos/`).
+Redactado con el agente `amalia-manicurista`, basado en contenido real (foto de detalle del spa que Amalia ya tenía en `Amalia nuevos/amalia fotos/`) y en la indicación explícita de Amalia sobre el riesgo de retirar el trabajo en casa.
 
 ### Modelo de datos
 
