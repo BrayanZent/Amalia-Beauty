@@ -42,8 +42,20 @@ create view public_slots as
 
 grant select on public_slots to anon, authenticated;
 
+-- Vista sin PII para que el barrido de expiracion (publico, sin auth) encuentre reservas pendientes vencidas
+create view public_expirable as
+  select id, estado, expira_en from bookings;
+
+grant select on public_expirable to anon, authenticated;
+
 create policy "cualquiera crea reserva" on bookings for insert with check (true);
 create policy "admin actualiza reservas" on bookings for update using (auth.role() = 'authenticated');
+-- Permite a clientes anonimos expirar SOLO sus propias reservas ya vencidas, y SOLO hacia 'expirada'
+-- (politicas permisivas se combinan con OR: esto no debilita la politica de admin de arriba)
+create policy "expirar reservas vencidas" on bookings
+  for update
+  using (estado = 'pendiente_abono' and expira_en < now())
+  with check (estado = 'expirada');
 create policy "admin crea bloqueos" on bloqueos for insert with check (auth.role() = 'authenticated');
 create policy "admin borra bloqueos" on bloqueos for delete using (auth.role() = 'authenticated');
 

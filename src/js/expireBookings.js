@@ -4,7 +4,7 @@ import { isExpired } from './availability.js';
 export async function expireStaleBookings() {
   try {
     const { data: pendientes, error } = await supabaseClient
-      .from('bookings')
+      .from('public_expirable')
       .select('id,estado,expira_en')
       .eq('estado', 'pendiente_abono');
 
