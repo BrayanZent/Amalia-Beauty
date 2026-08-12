@@ -97,7 +97,14 @@ async function renderBloqueos() {
       <label for="bloqueo-fecha">Fecha</label>
       <input id="bloqueo-fecha" type="date" required>
       <label for="bloqueo-hora">Hora (vacío = todo el día)</label>
-      <input id="bloqueo-hora" type="text" placeholder="ej. 15:00">
+      <select id="bloqueo-hora">
+        <option value="">Todo el día</option>
+        <option value="09:00">09:00</option>
+        <option value="10:00">10:00</option>
+        <option value="12:00">12:00</option>
+        <option value="15:00">15:00</option>
+        <option value="18:00">18:00</option>
+      </select>
       <button type="submit" class="btn-primary">Bloquear</button>
     </form>
     <div id="bloqueos-list"></div>

@@ -15,7 +15,7 @@ const PREGUNTAS = [
   },
   {
     texto: '¿Cómo reservo?',
-    respuesta: 'Elige tu servicio y horario en la sección "Reservar" de esta página, y transfiere el abono de $3.000 para confirmar tu cupo.',
+    respuesta: `Elige tu servicio y horario en la sección "Reservar" de esta página, y transfiere el abono de $${BUSINESS.abonoMonto.toLocaleString('es-CL')} para confirmar tu cupo.`,
   },
 ];
 
