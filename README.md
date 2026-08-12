@@ -18,3 +18,13 @@ npm install
 npm test              # corre los tests de lógica pura (vitest)
 npx serve src         # sirve el sitio localmente para probar en navegador
 ```
+
+## Notas de seguridad
+
+- El formulario de reserva crea filas en `bookings` sin límite de intentos (rate limiting) del lado servidor —
+  es un trade-off arquitectónico aceptado porque el sitio no tiene backend propio. Si esto se convierte en un
+  problema (spam o abuso del endpoint de inserción de reservas), evaluar una Supabase Edge Function como
+  gatekeeper o una restricción `CHECK` sobre `fecha`/`hora` que valide contra la lista real de horarios fijos.
+- La tabla `bookings` guarda datos personales (`nombre_clienta`, `telefono`). El acceso público de lectura
+  usa la vista `public_slots` (sin PII); la lectura de la tabla completa está restringida a usuarios
+  autenticados (panel admin). Ver `supabase/schema.sql`.
